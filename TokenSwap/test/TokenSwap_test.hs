@@ -17,7 +17,7 @@ import           Plutus.Model         (Run,
 import           Plutus.V2.Ledger.Api (PubKeyHash, Value, TxOutRef)
 import           PlutusTx.Prelude     (($))
 import           Prelude              (IO, (.), (<>), Monoid (mconcat),
-                                       (==), (&&), (!!))
+                                       (==), (&&), (!!), head)
 import qualified TokenSwap            as OnChain
 import           Test.Tasty           (defaultMain, testGroup)
 
@@ -89,7 +89,7 @@ normalSpending = do
     submitTx u1 $ lockingTx lockingSpend tokenVal dtm
 
     utxos <- utxoAt swapScript
-    let (ref, out) = utxos !! 0
+    let (ref, _) = head utxos
 
     consumingSpend <- spend u2 (adaValue 100)
     submitTx u2 $ consumingTx consumingSpend u2 u1 tokenVal ref dtm
@@ -111,12 +111,12 @@ doubleSpending = do
     submitTx u1 $ lockingTx lockingSpend2 (fakeValue scToken 1) dtm
     
     utxos <- utxoAt swapScript
-    let (ref1, out) = utxos !! 0
-    let (ref2, out) = utxos !! 1
+    let (ref1, _) = head utxos
+    let (ref2, _) = utxos !! 1
 
     consumingSpend <- spend u2 (adaValue 100)
     submitTx u2 $ doubleConsumingTx consumingSpend u2 u1 ref1 ref2 dtm
 
     [v1, v2] <- mapM valueAt [u1, u2]
-    unless (v1 == adaValue 100 && v2 == (fakeValue scToken 2))
+    unless (v1 == adaValue 100 && v2 == fakeValue scToken 2)
         $ logError "Final balances aren't correct"
