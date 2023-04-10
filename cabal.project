@@ -19,6 +19,8 @@ index-state:
 
 packages: 
     SimpleGambling
+    TokenSwap
+    Utilities
 
 -- We never, ever, want this.
 write-ghc-environment-files: never

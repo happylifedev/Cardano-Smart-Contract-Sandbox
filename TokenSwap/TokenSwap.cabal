@@ -1,5 +1,5 @@
 cabal-version:      2.4
-name:               simpleGambling
+name:               tokenswap
 version:            0.1.0.0
 
 common common-all
@@ -30,4 +30,11 @@ common common-all
 library
     import:           common-all
     hs-source-dirs:   contract
-    exposed-modules:  SimpleGambling
+    exposed-modules:  TokenSwap
+
+test-suite tokenswap
+    import:             common-all
+    type:               exitcode-stdio-1.0
+    main-is:            TokenSwap_test.hs
+    hs-source-dirs:     test
+    build-depends:      tokenswap
