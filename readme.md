@@ -16,3 +16,4 @@ wip - minting policy to allow minting of custom native tokens
 
 ### ZingNFT
 wip - minting policy to allow minting of custom NFT's
+
