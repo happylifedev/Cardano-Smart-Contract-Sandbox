@@ -28,10 +28,11 @@ main = do
     testGroup
       "Catch double spend with testing"
       [ expectSuceed "Normal spending" normalSpending
-      , bad  "Double spending" doubleSpending
+      , expectSuceed "Seller Retrieve" sellerRetrieving
+      , expectFail  "Double spending" doubleSpending
       ]
  where
-    bad msg = expectSuceed msg . mustFail
+    expectFail msg = expectSuceed msg . mustFail
     expectSuceed = testNoErrors (adaValue 10_000_000 <> fakeValue scToken 100) defaultBabbage
 
 
@@ -61,7 +62,6 @@ consumingTx usp buyer seller tokenVal output dtm =
         payToKey seller $ adaValue 100
     ]
 
-
 doubleConsumingTx :: UserSpend -> PubKeyHash -> PubKeyHash -> TxOutRef -> TxOutRef -> OnChain.DatumSwap -> Tx
 doubleConsumingTx usp buyer seller ref1 ref2 dtm =
     mconcat [
@@ -74,6 +74,13 @@ doubleConsumingTx usp buyer seller ref1 ref2 dtm =
         -- 1 utxo
         -- payToKey buyer $ fakeValue scToken 2,
         payToKey seller $ adaValue 100
+    ]
+
+sellerRetrieveTx :: PubKeyHash -> TxOutRef -> Value -> OnChain.DatumSwap -> Tx
+sellerRetrieveTx seller ref val dtm =
+    mconcat [
+        spendScript swapScript ref () dtm,
+        payToKey seller val
     ]
 
 
@@ -120,3 +127,20 @@ doubleSpending = do
     [v1, v2] <- mapM valueAt [u1, u2]
     unless (v1 == adaValue 100 && v2 == fakeValue scToken 2)
         $ logError "Final balances aren't correct"
+
+sellerRetrieving :: Run ()
+sellerRetrieving = do
+    u1 <- newUser $ fakeValue scToken 1
+    let dtm = OnChain.DatumSwap u1 100
+
+    lockingSpend1 <- spend u1 $ fakeValue scToken 1
+    submitTx u1 $ lockingTx lockingSpend1 (fakeValue scToken 1) dtm
+
+    utxos <- utxoAt swapScript
+    let (ref, _) = head utxos
+
+    submitTx u1 $ sellerRetrieveTx u1 ref (fakeValue scToken 1) dtm
+    [v1] <- mapM valueAt [u1]
+    unless (v1 == fakeValue scToken 1)
+        $ logError "Final balances aren't correct"
+    
