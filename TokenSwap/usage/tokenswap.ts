@@ -8,12 +8,12 @@ import {
 } from "https://deno.land/x/lucid@0.9.8/mod.ts";
 
 // need keyfile.json file in ./
-import { blockfrostKey, key1, key2 } from "./keyfile.json" assert { type: "json" }
+import keys from "./keyfile.json" assert { type: "json" }
 
 const lucid = await Lucid.new(
     new Blockfrost(
       "https://cardano-preprod.blockfrost.io/api/v0",
-      blockfrostKey
+      keys.blockfrostKey
     ),
     "Preprod"
 );
@@ -34,13 +34,8 @@ const SwapDatum = Data.Object({
 })
 type SwapDatum = Data.Static<typeof SwapDatum>;
 
-async function lockToken(key: string): Promise<TxHash> {
+async function lockToken(key: string, dtm: SwapDatum): Promise<TxHash> {
     lucid.selectWalletFromSeed(key);
-
-    const dtm = {
-        seller: lucid.utils.getAddressDetails(await lucid.wallet.address()).address.hex,
-        price: BigInt(10)
-    }
 
     const tx = await lucid
         .newTx()
@@ -55,16 +50,71 @@ async function lockToken(key: string): Promise<TxHash> {
     return hash;
 }
 
-async function buyToken(key: string): Promise<TxHash> {
-    // TODO send utxo to seller, claim token
+async function buyToken(key: string, dtm: SwapDatum): Promise<TxHash> {
+    lucid.selectWalletFromPrivateKey(key);
+
+    const scriptAddr = lucid.utils.validatorToAddress(TokenSwapValidator);
+
+    const utxos = await lucid.utxosAt(scriptAddr);
+
+    const tokenUtxo = utxos.find(u => u.datum == Data.to<SwapDatum>(dtm, SwapDatum));
+
+    if(tokenUtxo !== undefined) {
+
+        const tx = await lucid
+                    .newTx()
+                    .collectFrom([tokenUtxo], Data.void())
+                    .attachSpendingValidator(TokenSwapValidator)
+                    .complete();
+
+        const signedTx = await tx.sign().complete();
+        const hash = signedTx.submit();
+
+        return hash;
+
+    } else {
+        throw new Error("No Utxo's at script!")
+    }
 }
 
-async function retrieveToken(key: string): Promise<TxHash> {
-    // TODO seller retrieve unsold token
+async function retrieveToken(key: string, dtm: SwapDatum): Promise<TxHash> {
+    lucid.selectWalletFromPrivateKey(key);
+
+    const scriptAddr = lucid.utils.validatorToAddress(TokenSwapValidator);
+
+    const utxos = await lucid.utxosAt(scriptAddr);
+
+    const tokenUtxo = utxos.filter(u => u.datum == Data.to<SwapDatum>(dtm, SwapDatum));
+
+    if (tokenUtxo !== undefined) {
+        const Tx = await lucid
+                    .newTx()
+                    .collectFrom(tokenUtxo, Data.void())
+                    .attachSpendingValidator(TokenSwapValidator)
+                    .complete();
+
+        const signedTx = await Tx.sign().complete();
+        const hash = signedTx.submit();
+
+        return hash;
+    } else {
+        throw new Error("No utxo found at script!")
+    }
 }
 
-function run () {
-    console.log('running')
+async function run () {
+
+    const dtm = {
+        seller: lucid.utils.getAddressDetails(await lucid.wallet.address()).address.hex,
+        price: BigInt(10)
+    }
+
+    await lockToken(keys.key1, dtm);
+    
+    await buyToken(keys.key2, dtm);
+
+    // await retrieveToken(keys.key1, dtm);
+
 }
 
 run();

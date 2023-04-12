@@ -81,27 +81,7 @@ RUN cabal update
 # Add cabal to PATH
 RUN echo "export PATH=$PATH:/root/.cabal/bin" >> ~/.bashrc
 
-FROM haskell as cardano_cli
-
-# install cardano-cli (we use a different docker container for the actual node)
-# (These have to be the same version as the cardano-node image specified at `docker-compose.yml`)
-RUN wget https://github.com/rober-m/cardano-node/releases/download/1.35.5/$(arch)-linux-cardano-cli
-RUN chmod +x $(arch)-linux-cardano-cli
-RUN mv $(arch)-linux-cardano-cli /usr/bin/cardano-cli
-
-# node socket
-RUN echo "export CARDANO_NODE_SOCKET_PATH=/root/.cardano/preview/node.socket" >> ~/.bashrc
-RUN echo "export NETWORK=preview" >> ~/.bashrc
-
-FROM cardano_cli as kuber
-
-# install kuber
-RUN wget https://github.com/rober-m/kuber/releases/download/babbage-era/$(arch)-linux-kuber
-RUN chmod +x $(arch)-linux-kuber
-RUN mv $(arch)-linux-kuber /usr/bin/kuber
-
-
-FROM kuber as stylish_haskell
+FROM haskell as stylish_haskell
 
 # install stylish-haskell (FIXME: couldn't compile a bin for arm64)
 # RUN wget https://github.com/rober-m/stylish-haskell/releases/download/v0.14.3.0/$(arch)-linux-stylish-haskell
@@ -111,7 +91,7 @@ RUN wget https://github.com/rober-m/stylish-haskell/releases/download/v0.14.3.0/
 RUN chmod +x x86_64-linux-stylish-haskell
 RUN mv x86_64-linux-stylish-haskell /usr/bin/stylish-haskell
 
-FROM kuber as nodejs
+FROM stylish_haskell as nodejs
 
 ENV NODE_VERSION=16.13.0
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
@@ -130,7 +110,6 @@ RUN cd plutus-pioneer-program/code && cabal update
 RUN cd plutus-pioneer-program/code && cabal build all
 
 RUN echo "alias serve-docs='python3 -m http.server -d /workspace/docs/plutus-docs/haddock/'" >> ~/.bashrc
-RUN echo "source <(cardano-cli --bash-completion-script cardano-cli)" >> ~/.bashrc
 
 FROM plutus as cargo
 
