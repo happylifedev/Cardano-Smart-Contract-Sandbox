@@ -36,6 +36,8 @@ validator dtm _ ctx = traceIfFalse "Can only claim after deadline" deadlinePasse
             isBeneficiary :: Bool
             isBeneficiary = txSignedBy txInfo $ beneficiary dtm
 
+
+{-# INLINABLE wrappedVal #-}
 wrappedVal :: BuiltinData -> BuiltinData -> BuiltinData -> ()
 wrappedVal = wrapValidator validator
 

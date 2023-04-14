@@ -3,7 +3,7 @@ volumes:
   node-ipc:
 services:
   ppp:
-    image: robertinoiog/plutus-pioneer-program-4:v5 .
+    image: robertinoiog/plutus-pioneer-program-4:v5
     volumes:
       - ..:/workspace
     command: /bin/sh -c "while sleep 1000; do :; done"
