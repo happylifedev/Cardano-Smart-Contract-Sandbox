@@ -35,8 +35,8 @@ const SwapDatum = Data.Object({
 type SwapDatum = Data.Static<typeof SwapDatum>;
 
 async function lockToken(key: string, dtm: SwapDatum): Promise<TxHash> {
+    
     lucid.selectWalletFromSeed(key);
-
     const tx = await lucid
         .newTx()
         .payToContract(
@@ -105,7 +105,7 @@ async function retrieveToken(key: string, dtm: SwapDatum): Promise<TxHash> {
 async function run () {
 
     const dtm = {
-        seller: lucid.utils.getAddressDetails(await lucid.wallet.address()).address.hex,
+        seller: lucid.utils.getAddressDetails(await (await Lucid.new(undefined,undefined)).selectWalletFromPrivateKey(keys.key1).wallet.address()).address.hex,
         price: BigInt(10)
     }
 
