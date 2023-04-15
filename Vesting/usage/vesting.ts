@@ -34,7 +34,7 @@ async function lockFunds(dtm: VestingDatum, seed: string) {
 
     const lockingTx = await lucid
                         .newTx()
-                        .payToContract(scriptAddr, Data.void(), { lovelace: BigInt(10000000) })
+                        .payToContract(scriptAddr, { inline: Data.to<VestingDatum>(dtm, VestingDatum)}, { lovelace: BigInt(10000000) })
                         .complete()
     const signedTx = await lockingTx.sign().complete()
     const hash = await signedTx.submit();
