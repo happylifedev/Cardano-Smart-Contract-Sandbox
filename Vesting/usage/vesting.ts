@@ -2,16 +2,15 @@ import {
     Blockfrost,
     Data,
     Lucid,
-    PrivateKey,
     SpendingValidator,
     getAddressDetails
 } from "https://deno.land/x/lucid@0.9.8/mod.ts";
-import {blockfrostKey, seed} from './keyfile.json' assert {type: "json"}
+import keys from './keyfile.json' assert {type: "json"}
 
 const lucid = await Lucid.new(
     new Blockfrost(
         "https://cardano-preprod.blockfrost.io/api/v0",
-        blockfrostKey
+        keys.blockfrostKey
     ),
     "Preprod"
 )
@@ -53,35 +52,42 @@ async function claimFunds(dtm: VestingDatum, seed: string) {
                                 .newTx()
                                 .collectFrom([utxoToSpend], Data.void())
                                 .attachSpendingValidator(VestingScript)
-                                .validFrom(Date.now())
+                                .validFrom(Date.now() - 10000)
+                                .addSignerKey(dtm.beneficiary)
                                 .complete()
         
         const signed = await consumingTx.sign().complete()
         const hash = await signed.submit();
 
         return hash;
+    } else {
+        throw new Error("utxo not found")
     }
 }
 
 async function run() {
 
-    const beneficiary = getAddressDetails(await (await Lucid.new(undefined,undefined)).selectWalletFromSeed(seed).wallet.address()).paymentCredential?.hash;
+    const beneficiary = getAddressDetails(await (await Lucid.new(undefined,"Preprod")).selectWalletFromSeed(keys.seed).wallet.address()).paymentCredential?.hash;
 
     if (beneficiary == undefined) throw new Error("Beneficiary hash not found");
 
+    const deadline = BigInt(Date.now() + 30000)
+    console.log("dealine was: ", deadline);
+
     const dtm = {
         beneficiary,
-        deadline: BigInt(Date.now() + 30000)
+        deadline
     }
 
-    const lockHash = await lockFunds(dtm, seed);
+    const lockHash = await lockFunds(dtm, keys.seed);
     console.log("locked: ", lockHash)
+    
+    // wait 3 min for tx to finalize
+    await new Promise((resolve) => setTimeout(resolve, 180 * 1000));
+    console.log("waiting 3 min for transaction to propegate...")
 
-    const consumeHash = await claimFunds(dtm, seed);
-    console.log("consumed: ", consumeHash)
+    const consumeHash = await claimFunds(dtm, keys.seed);
+    console.log("claimed: ", consumeHash)
 }
 
 run()
-
-
-

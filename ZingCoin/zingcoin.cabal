@@ -1,0 +1,40 @@
+cabal-version:      2.4
+name:               zingcoin
+version:            0.1.0.0
+
+common common-all
+    build-depends:    base ^>=4.14.3.0
+                    , aeson
+                    , bytestring
+                    , containers
+                    , cardano-api
+                    , data-default
+                    , plutus-ledger-api
+                    , plutus-tx-plugin
+                    , plutus-tx
+                    , text
+                    , serialise
+                    , QuickCheck
+                    , tasty
+                    , tasty-quickcheck
+                    , plutus-simple-model
+                    , mtl
+                    , utilities
+    default-language: Haskell2010
+    ghc-options: -Wall -fobject-code -fno-ignore-interface-pragmas
+                 -fno-omit-interface-pragmas -fno-strictness 
+                 -fno-spec-constr -fno-specialise -fexpose-all-unfoldings
+                 -fplugin-opt PlutusTx.Plugin:defer-errors
+
+
+library
+    import:           common-all
+    hs-source-dirs:   contract
+    exposed-modules:  ZingCoin
+
+test-suite zingcoin
+    import:             common-all
+    type:               exitcode-stdio-1.0
+    main-is:            zingcoin_test.hs
+    hs-source-dirs:     test
+    build-depends:      zingcoin

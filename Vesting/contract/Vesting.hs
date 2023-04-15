@@ -23,9 +23,9 @@ data VestingDatum = VestingDatum {
 unstableMakeIsData ''VestingDatum
 
 {-# INLINABLE validator #-}
-validator :: VestingDatum -> () -> ScriptContext -> Bool 
+validator :: VestingDatum -> () -> ScriptContext -> Bool
 validator dtm _ ctx = traceIfFalse "Can only claim after deadline" deadlinePassed &&
-                        traceIfFalse "Not allowed to claim" isBeneficiary
+                      traceIfFalse "Not allowed to claim" isBeneficiary
         where
             txInfo :: TxInfo
             txInfo = scriptContextTxInfo ctx

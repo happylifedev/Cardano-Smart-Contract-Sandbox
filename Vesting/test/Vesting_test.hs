@@ -10,8 +10,8 @@ import Plutus.Model         (
                             Run, newUser, spend, Tx, UserSpend, userSpend, payToScript, toV2, DatumMode (HashDatum),
                             submitTx, utxoAt, spendScript, payToKey, valueAt, logError, waitUntil, validateIn, currentTimeRad, noErrors
                             )
-import qualified Vesting as Onchain
 import Plutus.V1.Ledger.Api (PubKeyHash, Value, TxOutRef, POSIXTime (POSIXTime))
+import qualified Vesting as Onchain
 import Control.Monad
 
 
