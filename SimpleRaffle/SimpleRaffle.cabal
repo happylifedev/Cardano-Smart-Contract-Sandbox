@@ -1,5 +1,5 @@
 cabal-version:      2.4
-name:               simpleGambling
+name:               simpleRaffle
 version:            0.1.0.0
 
 common common-all
@@ -30,4 +30,4 @@ common common-all
 library
     import:           common-all
     hs-source-dirs:   contract
-    exposed-modules:  SimpleGambling
+    exposed-modules:  SimpleRaffle
