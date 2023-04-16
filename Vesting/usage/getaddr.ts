@@ -1,9 +1,13 @@
 import {
-    Lucid
+    Lucid, fromText,
+
 } from "https://deno.land/x/lucid@0.9.8/mod.ts";
 
 import seeds from './keyfile.json' assert {type: "json"}
 
-const addr = await (await Lucid.new(undefined,"Preprod")).selectWalletFromSeed(seeds.seed).wallet.address()
+const lucid =await Lucid.new(undefined,"Preprod");
 
-console.log(addr)
+const addr = await lucid.selectWalletFromSeed(seeds.seed).wallet.address()
+
+console.log("bech32", addr)
+console.log("hex", fromText(addr))

@@ -3,6 +3,7 @@ import {
     Data,
     Lucid,
     SpendingValidator,
+    TxHash,
     getAddressDetails
 } from "https://deno.land/x/lucid@0.9.8/mod.ts";
 import keys from './keyfile.json' assert {type: "json"}
@@ -26,7 +27,7 @@ const VestingDatum = Data.Object({
 })
 type VestingDatum = Data.Static<typeof VestingDatum>;
 
-async function lockFunds(dtm: VestingDatum, seed: string) {
+async function lockFunds(dtm: VestingDatum, seed: string): Promise<TxHash> {
     lucid.selectWalletFromSeed(seed);
 
     const scriptAddr = lucid.utils.validatorToAddress(VestingScript)
@@ -41,7 +42,7 @@ async function lockFunds(dtm: VestingDatum, seed: string) {
     return hash;
 }
 
-async function claimFunds(dtm: VestingDatum, seed: string) {
+async function claimFunds(dtm: VestingDatum, seed: string): Promise<TxHash> {
     lucid.selectWalletFromSeed(seed);
 
     const utxoToSpend = (await lucid.utxosAt(lucid.utils.validatorToAddress(VestingScript)))

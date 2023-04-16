@@ -52,5 +52,9 @@ Per claim:
         - 2. entries conserved (entries in users utxo + entires returned to script == total entries in nft utxo datum)
         - 3. deadline not exceeded 
 
--- to claim:
---  
+3. to claim:
+    - script checks:
+        - deadline passed
+        - claimer owns entries
+        - claimer is winner ??
+        - 

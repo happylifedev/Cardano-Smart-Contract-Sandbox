@@ -8,14 +8,13 @@
 
 module ZingCoin where
 
-import Plutus.V2.Ledger.Api      (TxInfo, PubKeyHash (PubKeyHash), TokenName (..), BuiltinData)
+import Plutus.V2.Ledger.Api      (TxInfo, PubKeyHash, TokenName (..), BuiltinData, unsafeFromBuiltinData)
 import Plutus.V2.Ledger.Contexts (scriptContextTxInfo, txSignedBy, ScriptContext, TxInfo (txInfoMint))
 import PlutusTx.Prelude          (Bool, traceIfFalse, (==))
-import PlutusTx                  ( UnsafeFromData (unsafeFromBuiltinData), CompiledCode, compile)
+import PlutusTx                  (CompiledCode, compile)
 import Plutus.V1.Ledger.Value    (flattenValue)
 import Utilities                 (wrapPolicy, writeCodeToFile)
 import Prelude                   ((&&), ($), Bool (False), IO)
-import Data.String               (fromString)
 
 -- data ZingCoinParams = ZingCoinParams {
 --     owner :: PubKeyHash,
@@ -27,15 +26,15 @@ import Data.String               (fromString)
 
 
 {-# INLINABLE policy #-}
-policy :: () -> ScriptContext -> Bool
-policy _ ctx = traceIfFalse "Unauthorized minting" signedByOwner  &&
+policy :: PubKeyHash -> () -> ScriptContext -> Bool
+policy pkh _ ctx = traceIfFalse "Unauthorized minting" signedByOwner  &&
                traceIfFalse "Invalid tokens"       tokensValid
     where
         txInfo :: TxInfo
         txInfo = scriptContextTxInfo ctx
 
         signedByOwner :: Bool
-        signedByOwner = txSignedBy txInfo $ PubKeyHash "7d3c8f8cdc2dc42924f3cf8fa2f72bf936531cc3ebf56340a29f9036"
+        signedByOwner = txSignedBy txInfo pkh
 
         tokensValid :: Bool
         tokensValid = case flattenValue $ txInfoMint txInfo of 
@@ -43,11 +42,11 @@ policy _ ctx = traceIfFalse "Unauthorized minting" signedByOwner  &&
                 _            -> False
 
 {-# INLINABLE wrappedPolicy #-}
-wrappedPolicy :: BuiltinData -> BuiltinData -> ()
-wrappedPolicy = wrapPolicy policy
+wrappedPolicy :: BuiltinData -> BuiltinData -> BuiltinData -> ()
+wrappedPolicy pkh = wrapPolicy (policy $ unsafeFromBuiltinData pkh)
 
 {-# INLINABLE compiledPolicy #-}
-compiledPolicy :: CompiledCode (BuiltinData -> BuiltinData -> ())
+compiledPolicy :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
 compiledPolicy = $$(compile [|| wrappedPolicy ||])
 
 writeToFile :: IO ()
