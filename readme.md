@@ -15,7 +15,7 @@ Minting policy to allow (inifite, and centralized)minting of a native token call
 Zingcoin except with the script constants applied to the compiled code, by Lucid.
 
 ### SimpleRaffle
-wip - pay a fee to have a chance at winning a prize(might become raffle)
+wip - List an NFT for raffle, users buy entries to win the token, a winner is drawn and the NFT is claimed by the winner. 
 
 ### ZingNFT
 wip - minting policy to allow minting of custom NFT's
