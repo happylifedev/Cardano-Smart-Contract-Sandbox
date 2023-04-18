@@ -12,6 +12,8 @@
 - need to mint entry tokens
     - minting policy, centralized, only single pubkeyhash allowed to mint
     - endless supply, no value
+    - must be tied to each raffle
+        - otherwise could buy cheap entires and redeem other raffles
 
 #### State required
 
@@ -37,6 +39,8 @@ Per claim:
             - `nft utxo`  
             - `entries utxo` 500 entry tokens
 
+1. (a) To cancel:?
+
 2. to enter
     - Supply Tx:
         - `inputs`: 
@@ -51,10 +55,25 @@ Per claim:
         - 1. paid seller, price * entires consumed
         - 2. entries conserved (entries in users utxo + entires returned to script == total entries in nft utxo datum)
         - 3. deadline not exceeded 
+        - 4. entries are sent to buyer
 
 3. to claim:
+    - Supply Tx:
+        - `inputs` 
+            1. `entries utxo` return entries
+            2. 
+        - `outputs` 
+            1. `nft utxo` the nft that was won
+
     - script checks:
         - deadline passed
-        - claimer owns entries
+        - claimer supplied entries
         - claimer is winner ??
-        - 
+            - at point of claim, we will know:
+                - buyers entry count
+                - buyer 
+                - 
+            - rules:
+                1. there must be exactly 1 winner in all cases
+                2. can't be precoded into the script
+                    - because the script will need to be supplied on the frontend(accessible)

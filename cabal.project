@@ -21,6 +21,7 @@ packages:
     TokenSwap
     Vesting
     ZingCoin
+    ZingCoinParameterized
     Utilities
 
 -- We never, ever, want this.
