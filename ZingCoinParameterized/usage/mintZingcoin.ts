@@ -1,13 +1,5 @@
-import { 
-    Blockfrost,
-    Data,
-    Lucid,
-    MintingPolicy,
-    PublicKey,
-    Unit,
-    applyParamsToScript,
-    fromText,
-    paymentCredentialOf
+import {  Blockfrost, Data, Lucid, MintingPolicy, PublicKey, 
+          Unit, applyParamsToScript, fromText, paymentCredentialOf
 } from 'https://deno.land/x/lucid@0.9.8/mod.ts'
 
 import keys from './keyfile.json' assert {type: "json"}

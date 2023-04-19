@@ -1,11 +1,4 @@
-import {
-    Blockfrost,
-    Data,
-    Lucid,
-    SpendingValidator,
-    TxHash,
-    getAddressDetails
-} from "https://deno.land/x/lucid@0.9.8/mod.ts";
+import { Blockfrost, Data, Lucid, SpendingValidator, TxHash, getAddressDetails } from "https://deno.land/x/lucid@0.9.8/mod.ts";
 import keys from './keyfile.json' assert {type: "json"}
 
 const lucid = await Lucid.new(
