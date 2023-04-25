@@ -6,36 +6,36 @@
 
 module ZingNFT where
 
-import Plutus.V2.Ledger.Api      (PubKeyHash (PubKeyHash), POSIXTime (POSIXTime), ScriptContext (scriptContextTxInfo),
-                                  BuiltinData, mkMintingPolicyScript, MintingPolicy, BuiltinByteString, 
+import Plutus.V2.Ledger.Api      (
+                                  PubKeyHash (PubKeyHash), POSIXTime (POSIXTime), ScriptContext (scriptContextTxInfo),
+                                  BuiltinData, mkMintingPolicyScript, MintingPolicy, 
                                   TxInfo (txInfoValidRange, txInfoMint), TokenName (TokenName)
                                  )
-import Prelude                   (Bool (True, False), (.), IO, (&&), ($), Eq ((==)))
+import Prelude                   (Bool (False), (.), IO, (&&), ($), Eq ((==)))
 import Utilities                 (wrapPolicy, writePolicyToFile)
 import PlutusTx                  (makeLift, compile, liftCode, applyCode)
 import PlutusTx.Prelude          (traceIfFalse)
-import Data.Aeson (Value(Bool))
 import Plutus.V1.Ledger.Interval (to, contains)
-import Plutus.V2.Ledger.Contexts (txSignedBy, txOutValue, txInfoOutputs)
-import Plutus.V1.Ledger.Value    (flattenValue)
+import Plutus.V1.Ledger.Value    (flattenValue, toString)
+import Plutus.V2.Ledger.Contexts (txSignedBy)
 import Data.List
 
-data Params = Params {
+data Constants = Constants {
     owner :: PubKeyHash,
     tokenPrefix :: TokenName,
     lockAfter :: POSIXTime
 }
-makeLift ''Params
+makeLift ''Constants
 
-zingNFTParams :: Params
-zingNFTParams = Params {
+zingNFTConstants :: Constants
+zingNFTConstants = Constants {
     owner = PubKeyHash "c1bd6f764d3b68b9f689fbc7ea8027fad5fb190a71caab469cfa8f83",
     tokenPrefix = TokenName "ZingBoi",
     lockAfter = POSIXTime 1713550450
 }
 
-policy :: Params -> () -> ScriptContext -> Bool
-policy p r ctx = traceIfFalse "Can't mint after deadline" beforeLock &&
+policy :: Constants -> () -> ScriptContext -> Bool
+policy p _ ctx = traceIfFalse "Can't mint after deadline" beforeLock &&
                  traceIfFalse "Unauthorized to mint" ownerApproved &&
                  traceIfFalse "Token details incorrect" tokenCorrect
         where
@@ -50,16 +50,16 @@ policy p r ctx = traceIfFalse "Can't mint after deadline" beforeLock &&
 
             tokenCorrect :: Bool
             tokenCorrect = case flattenValue $ txInfoMint txInfo of 
-                -- [(_, tn, _)] -> take 7 tn == tokenPrefix p 
-                [(_, tn, _)] -> take 7 tn == tokenPrefix p 
+                [(_, tn, _)] -> take prefixLength (toString tn) == toString (tokenPrefix p)
+                    where
+                        prefixLength = length $ toString $ tokenPrefix p
                 _            -> False
 
-
-wrappedPolicy :: Params -> BuiltinData -> BuiltinData -> ()
+wrappedPolicy :: Constants -> BuiltinData -> BuiltinData -> ()
 wrappedPolicy = wrapPolicy . policy
 
-compiledPolicy :: Params -> MintingPolicy
+compiledPolicy :: Constants -> MintingPolicy
 compiledPolicy p = mkMintingPolicyScript ($$(compile [|| wrappedPolicy||]) `applyCode` liftCode p)
 
 writeToFile :: IO ()
-writeToFile = writePolicyToFile "./assets/zingNFT.plutus" (compiledPolicy zingNFTParams)
+writeToFile = writePolicyToFile "./assets/zingNFT.plutus" (compiledPolicy zingNFTConstants)
