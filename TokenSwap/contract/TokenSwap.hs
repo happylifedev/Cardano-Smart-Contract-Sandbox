@@ -29,7 +29,7 @@ PlutusTx.unstableMakeIsData ''DatumSwap
 mkValidator :: DatumSwap -> () -> ScriptContext -> Bool
 mkValidator ds _ ctx = (traceIfFalse "You have to pay the seller!" outputToSeller &&
                         traceIfFalse "Can only consume one utxo at a time" singleOutputConsumed)
-                       || consumerIsSeller
+                       || consumerIsSeller -- future: make sure that seller can't retrieve the nft once a winner has won
     where
         txInfo :: TxInfo
         txInfo = scriptContextTxInfo ctx

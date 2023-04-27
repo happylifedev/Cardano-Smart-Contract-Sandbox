@@ -14,11 +14,15 @@ Minting policy to allow (inifite, and centralized)minting of a native token call
 ### ZingCoinParameterized
 Zingcoin except with the script constants applied to the compiled code, by Lucid.
 
-### SimpleRaffle
-wip - List an NFT for raffle, users buy entries to win the token, a winner is drawn and the NFT is claimed by the winner. 
+### ZingNFTTimeLocked
+A time locking parameterized minting policy to allow minting of custom NFT's
 
 ### ZingNFT
 wip - minting policy to allow minting of custom NFT's
+
+### SimpleRaffle
+wip - List an NFT for raffle, users buy entries to win the token, a winner is drawn and the NFT is claimed by the winner. 
+
 
 #### Plutus docs
 cd /app/plutus-pioneer-program 

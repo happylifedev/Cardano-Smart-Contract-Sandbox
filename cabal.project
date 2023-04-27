@@ -23,6 +23,7 @@ packages:
     ZingCoin
     ZingCoinParameterized
     ZingNFTTimeLocked
+    ZingNFT
     SpendAny
     Utilities
 
