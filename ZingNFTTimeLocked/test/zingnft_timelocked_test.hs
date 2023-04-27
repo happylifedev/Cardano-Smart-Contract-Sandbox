@@ -7,16 +7,17 @@
 
 module Main where
 
-import qualified ZingNFT as Onchain
-import Plutus.Model         (
-                             Tx, Run, logError, newUser, adaValue, testNoErrors, defaultBabbage, mustFail,
-                             TypedPolicy (TypedPolicy), toV2, mintValue, payToKey, scriptCurrencySymbol,
-                             submitTx, userSpend, spend, UserSpend, currentTimeRad, validateIn, valueAt, noErrors, waitUntil
-                            )
-import Prelude              (IO, ($), Monoid (mconcat), Eq ((==)), (.), Bool (False), Semigroup ((<>)), putStrLn)
-import Plutus.V2.Ledger.Api (TokenName(TokenName), PubKeyHash, Value (Value), fromList, POSIXTime (POSIXTime))
-import Test.Tasty           (defaultMain, testGroup)
-import Control.Monad        (unless)
+import qualified ZingNFT_TimeLocked as Onchain
+import Plutus.Model                    (
+                                        Tx, Run, logError, newUser, adaValue, testNoErrors, defaultBabbage, mustFail,
+                                        TypedPolicy (TypedPolicy), toV2, mintValue, payToKey, scriptCurrencySymbol,
+                                        submitTx, userSpend, spend, UserSpend, currentTimeRad, validateIn, valueAt, 
+                                        noErrors, waitUntil
+                                       )
+import Prelude                         (IO, ($), Monoid (mconcat), Eq ((==)), (.), Bool (False), Semigroup ((<>)), putStrLn)
+import Plutus.V2.Ledger.Api            (TokenName(TokenName), PubKeyHash, Value (Value), fromList, POSIXTime (POSIXTime))
+import Test.Tasty                      (defaultMain, testGroup)
+import Control.Monad                   (unless)
 
 main :: IO ()
 main = do

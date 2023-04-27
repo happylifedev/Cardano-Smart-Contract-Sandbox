@@ -6,7 +6,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NoImplicitPrelude     #-}
 
-module ZingNFT where
+module ZingNFT_TimeLocked where
 
 import Plutus.V2.Ledger.Api      (
                                   PubKeyHash, POSIXTime (POSIXTime), ScriptContext (scriptContextTxInfo),

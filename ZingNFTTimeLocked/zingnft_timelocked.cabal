@@ -1,5 +1,5 @@
 cabal-version:      2.4
-name:               zingnft
+name:               zingnfttimelocked
 version:            0.1.0.0
 
 common common-all
@@ -30,11 +30,11 @@ common common-all
 library
     import:           common-all
     hs-source-dirs:   contract
-    exposed-modules:  ZingNFT
+    exposed-modules:  ZingNFT_TimeLocked
 
-test-suite zingnft
+test-suite zingnfttimelocked
     import:             common-all
     type:               exitcode-stdio-1.0
-    main-is:            zingnft_test.hs
+    main-is:            zingnft_timelocked_test.hs
     hs-source-dirs:     test
-    build-depends:      zingnft
+    build-depends:      zingnfttimelocked

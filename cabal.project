@@ -22,7 +22,7 @@ packages:
     Vesting
     ZingCoin
     ZingCoinParameterized
-    ZingNFT
+    ZingNFTTimeLocked
     SpendAny
     Utilities
 
