@@ -23,6 +23,7 @@ packages:
     ZingCoin
     ZingCoinParameterized
     ZingNFT
+    SpendAny
     Utilities
 
 -- We never, ever, want this.

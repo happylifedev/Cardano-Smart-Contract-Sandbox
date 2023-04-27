@@ -9,13 +9,13 @@
 module ZingNFT where
 
 import Plutus.V2.Ledger.Api      (
-                                  PubKeyHash, POSIXTime, ScriptContext (scriptContextTxInfo),
+                                  PubKeyHash, POSIXTime (POSIXTime), ScriptContext (scriptContextTxInfo),
                                   BuiltinData, mkMintingPolicyScript, MintingPolicy,
                                   BuiltinByteString,
                                   TxInfo (txInfoValidRange, txInfoMint), TokenName (unTokenName),
                                  )
 import Plutus.V2.Ledger.Contexts (txSignedBy)
-import Plutus.V1.Ledger.Interval (after)
+import Plutus.V1.Ledger.Interval (to, contains)
 import Plutus.V1.Ledger.Value    (flattenValue)
 import PlutusTx.Prelude          (traceIfFalse, (==), sliceByteString, lengthOfByteString)
 import PlutusTx                  (makeLift, compile, liftCode, applyCode)
@@ -25,7 +25,7 @@ import Prelude                   (Bool (False), (.), IO, (&&), ($))
 data Constants = Constants {
     owner :: PubKeyHash,
     tokenPrefix :: BuiltinByteString,
-    lockAfter :: POSIXTime
+    lock :: POSIXTime
 }
 makeLift ''Constants
 
@@ -33,20 +33,20 @@ zingNFTConstants :: Constants
 zingNFTConstants = Constants {
     owner = "c1bd6f764d3b68b9f689fbc7ea8027fad5fb190a71caab469cfa8f83",
     tokenPrefix = "ZingBoi",
-    lockAfter = 1713550450
+    lock = POSIXTime 1714116796000
 }
 
 {-# INLINABLE policy #-}
 policy :: Constants -> () -> ScriptContext -> Bool
 policy p _ ctx = traceIfFalse "Unauthorized to mint" ownerApproved &&
-                --  traceIfFalse "Can't mint after deadline" beforeLock &&
+                 traceIfFalse "Can't mint after deadline" beforeLock &&
                  traceIfFalse "Token details incorrect" tokenCorrect
         where
             txInfo :: TxInfo
             txInfo = scriptContextTxInfo ctx
 
-            -- beforeLock :: Bool
-            -- beforeLock = after (lockAfter p) (txInfoValidRange txInfo)
+            beforeLock :: Bool
+            beforeLock = contains (to $ lock p) (txInfoValidRange txInfo)
 
             ownerApproved :: Bool
             ownerApproved = txSignedBy txInfo $ owner p
