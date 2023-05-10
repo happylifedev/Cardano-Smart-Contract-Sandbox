@@ -1,21 +1,24 @@
- {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module ZingNFT where
 
-import Plutus.V2.Ledger.Api (ScriptContext (scriptContextTxInfo), CurrencySymbol, BuiltinByteString, BuiltinData,
-                            TxInfo (txInfoInputs, txInfoData, txInfoOutputs, txInfoMint),UnsafeFromData (unsafeFromBuiltinData),
-                            TxInInfo (txInInfoOutRef, txInInfoResolved),TxOut (txOutValue, txOutDatum), TokenName (TokenName, unTokenName),
-                            Value (Value, getValue), fromList, OutputDatum (OutputDatum, OutputDatumHash), Datum (getDatum, Datum), singleton, toData, ToData (toBuiltinData))
-import PlutusTx             (unstableMakeIsData, compile, CompiledCode)
-import Utilities            (wrapPolicy, writeCodeToFile)
-import PlutusTx.Prelude     (traceIfFalse, find, any, Integer, (==), map, Ord ((>=), (<=)), (+), (&&), MultiplicativeSemigroup ((*)), isJust, encodeUtf8)
-import Prelude              (lookup, Bool (False, True), Maybe (Just, Nothing), IO, (.), ($), Semigroup ((<>)), Show (show))
-import Plutus.V1.Ledger.Value (flattenValue)
-import PlutusTx.Builtins (serialiseData)
-import qualified Data.ByteString.Char8
-
+import Plutus.V2.Ledger.Api     (ScriptContext (scriptContextTxInfo), CurrencySymbol, BuiltinByteString, BuiltinData,
+                                TxInfo (txInfoInputs, txInfoData, txInfoOutputs, txInfoMint),
+                                UnsafeFromData (unsafeFromBuiltinData), TxInInfo (txInInfoOutRef, txInInfoResolved),
+                                TxOut (txOutValue, txOutDatum), TokenName (TokenName, unTokenName),
+                                OutputDatum (OutputDatum), singleton, Value, Datum (getDatum))
+import Plutus.V1.Ledger.Value   (flattenValue)
+import PlutusTx                 (unstableMakeIsData, compile, CompiledCode)
+import PlutusTx.Prelude         (traceIfFalse, find, Integer, (==), map, Ord ((<=)), (+), (&&),
+                                 MultiplicativeSemigroup ((*)), isJust, encodeUtf8, divMod, otherwise, foldr, (++), BuiltinString)
+import PlutusTx.Builtins        (appendString, equalsInteger)
+import PlutusTx.Builtins.Class  (stringToBuiltinString)
+import Prelude                  (Bool (False), Maybe (Just, Nothing), IO, (.), ($), Semigroup ((<>)), Char)
+import Utilities                (wrapPolicy, writeCodeToFile)
 
 data ContractInfo = ContractInfo {
     threadToken :: CurrencySymbol,
@@ -34,8 +37,10 @@ unstableMakeIsData ''ThreadDatum
 {-# INLINABLE policy #-}
 policy :: ContractInfo -> () -> ScriptContext -> Bool
 policy info _ ctx = traceIfFalse "Doesn't consume a threadtoken"             consumesThread &&
-                    traceIfFalse "Returned thread either missing or invalid" returnsThread &&
-                    traceIfFalse "Max supply reached"                        belowSupply
+                    traceIfFalse "Returned thread either missing or invalid" returnsThread  &&
+                    traceIfFalse "Max supply reached"                        belowSupply    &&
+                    traceIfFalse "Token ID not correct"                      idCorrect
+
         where 
             txInfo :: TxInfo
             txInfo = scriptContextTxInfo ctx
@@ -69,29 +74,67 @@ policy info _ ctx = traceIfFalse "Doesn't consume a threadtoken"             con
 
             belowSupply :: Bool
             belowSupply = case returnedThreadDatum of 
-                Just d -> mintCount d <= maxSupply info
+                Just d -> mintCount d <= maxSupply info 
                 _       -> False
             
-            correctId :: Integer
-            correctId = case returnedThreadDatum of
+            expectedId :: Integer
+            expectedId = case returnedThreadDatum of
                 Just d -> (threadIdx d * threadCount d) + mintCount d
-                _      -> 0
+                _      -> 0 -- fix
 
             idCorrect :: Bool
-            idCorrect = case flattenValue $ txInfoMint txInfo of 
-                -- [(_, tn, _)] -> unTokenName tn == tokenPrefix info <> serialiseData (toBuiltinData correctId)
-                [(_, tn, _)] -> unTokenName tn == tokenPrefix info <> show correctId
---               ^^                    
---              currencySymbol is known to be correct since this contract is running
+            idCorrect = case flattenValue $ txInfoMint txInfo of  
+                [(_, tn, _)] -> unTokenName tn == tokenPrefix info <> integerToBuiltinByteString expectedId
+                -- [(_, tn, _)] -> True
                 _            -> False
 
 {-# INLINABLE wrappedPolicy #-}
 wrappedPolicy :: BuiltinData -> BuiltinData -> BuiltinData -> ()
 wrappedPolicy p = wrapPolicy (policy $ unsafeFromBuiltinData p)
 
-{-# INLINABLE compiledPolicy #-}
-compiledPolicy :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
-compiledPolicy = $$(compile [|| wrappedPolicy ||])
+{-# INLINABLE compiledPolicyCode #-}
+compiledPolicyCode :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
+compiledPolicyCode = $$(compile [|| wrappedPolicy ||])
 
-writeToFile :: IO ()
-writeToFile = writeCodeToFile "./assets/zingnft.plutus" compiledPolicy
+saveCode :: IO ()
+saveCode = writeCodeToFile "./assets/zingnft.plutus" compiledPolicyCode
+
+------------------------------------------------------------
+-- Helpers
+------------------------------------------------------------
+
+integerToBuiltinByteString :: Integer -> BuiltinByteString
+integerToBuiltinByteString i = encodeUtf8 $ intToString i
+
+{-# INLINEABLE intToString #-}
+intToString :: Integer -> BuiltinString
+intToString i = foldr appendString "" strings
+  where
+    ints = intToInts i
+    strings = map (charToString . intToChar) ints
+
+charToString :: Char -> BuiltinString
+charToString c = stringToBuiltinString [c]
+
+{-# INLINEABLE intToInts #-}
+intToInts :: Integer -> [Integer]
+intToInts i
+  | equalsInteger a 0 = [b]
+  | otherwise = intToInts a ++ [b]
+  where
+    (a, b) = divMod i 10
+
+{-# INLINEABLE intToChar #-}
+intToChar :: Integer -> Char
+intToChar i
+  | equalsInteger i 0 = '0'
+  | equalsInteger i 1 = '1'
+  | equalsInteger i 2 = '2'
+  | equalsInteger i 3 = '3'
+  | equalsInteger i 4 = '4'
+  | equalsInteger i 5 = '5'
+  | equalsInteger i 6 = '6'
+  | equalsInteger i 7 = '7'
+  | equalsInteger i 8 = '8'
+  | equalsInteger i 9 = '9'
+  | otherwise = '0' -- Fix this
