@@ -14,7 +14,7 @@ import Plutus.V2.Ledger.Api     (ScriptContext (scriptContextTxInfo), CurrencySy
 import Plutus.V1.Ledger.Value   (flattenValue)
 import PlutusTx                 (unstableMakeIsData, compile, CompiledCode)
 import PlutusTx.Prelude         (traceIfFalse, find, Integer, (==), map, Ord ((<=)), (+), (&&),
-                                 MultiplicativeSemigroup ((*)), isJust, encodeUtf8, divMod, otherwise, foldr, (++), BuiltinString)
+                                 MultiplicativeSemigroup ((*)), isJust, encodeUtf8, divMod, otherwise, foldr, (++), BuiltinString, appendByteString)
 import PlutusTx.Builtins        (appendString, equalsInteger)
 import PlutusTx.Builtins.Class  (stringToBuiltinString)
 import Prelude                  (Bool (False), Maybe (Just, Nothing), IO, (.), ($), Semigroup ((<>)), Char)
@@ -83,8 +83,8 @@ policy info _ ctx = traceIfFalse "Doesn't consume a threadtoken"             con
                 _      -> 0 -- fix
 
             idCorrect :: Bool
-            idCorrect = case flattenValue $ txInfoMint txInfo of  
-                [(_, tn, _)] -> unTokenName tn == tokenPrefix info <> integerToBuiltinByteString expectedId
+            idCorrect = case flattenValue $ txInfoMint txInfo of
+                [(_, tn, _)] -> unTokenName tn == appendByteString (tokenPrefix info) (integerToBuiltinByteString expectedId)
                 -- [(_, tn, _)] -> True
                 _            -> False
 
@@ -103,6 +103,7 @@ saveCode = writeCodeToFile "./assets/zingnft.plutus" compiledPolicyCode
 -- Helpers
 ------------------------------------------------------------
 
+{-# INLINABLE integerToBuiltinByteString #-}
 integerToBuiltinByteString :: Integer -> BuiltinByteString
 integerToBuiltinByteString i = encodeUtf8 $ intToString i
 
@@ -113,10 +114,11 @@ intToString i = foldr appendString "" strings
     ints = intToInts i
     strings = map (charToString . intToChar) ints
 
+{-# INLINABLE charToString #-}
 charToString :: Char -> BuiltinString
 charToString c = stringToBuiltinString [c]
 
-{-# INLINEABLE intToInts #-}
+{-# INLINEABLE intToInts #-}d
 intToInts :: Integer -> [Integer]
 intToInts i
   | equalsInteger a 0 = [b]
