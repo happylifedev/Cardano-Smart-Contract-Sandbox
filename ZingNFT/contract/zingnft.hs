@@ -6,45 +6,50 @@
 
 module ZingNFT where
 
-import Plutus.V2.Ledger.Api     (ScriptContext (scriptContextTxInfo), CurrencySymbol, BuiltinByteString, BuiltinData,
-                                TxInfo (txInfoInputs, txInfoData, txInfoOutputs, txInfoMint),
-                                UnsafeFromData (unsafeFromBuiltinData), TxInInfo (txInInfoOutRef, txInInfoResolved),
-                                TxOut (txOutValue, txOutDatum), TokenName (TokenName, unTokenName),
-                                OutputDatum (OutputDatum), singleton, Value, Datum (getDatum))
-import Plutus.V1.Ledger.Value   (flattenValue)
-import PlutusTx                 (unstableMakeIsData, compile, CompiledCode)
-import PlutusTx.Prelude         (traceIfFalse, find, Integer, (==), map, Ord ((<=), (<), (>=)), (+), (&&),
-                                 MultiplicativeSemigroup ((*)), isJust, appendByteString, consByteString)
-import Prelude                  (Bool (False), Maybe (Just, Nothing), IO, ($))
-import Utilities                (wrapPolicy, writeCodeToFile)
+import Plutus.V2.Ledger.Api       (ScriptContext (scriptContextTxInfo), CurrencySymbol, BuiltinByteString, BuiltinData,
+                                  TxInfo (txInfoInputs, txInfoData, txInfoOutputs, txInfoMint),
+                                  UnsafeFromData (unsafeFromBuiltinData), TxInInfo (txInInfoOutRef, txInInfoResolved),
+                                  TxOut (txOutValue, txOutDatum), TokenName (TokenName, unTokenName),
+                                  OutputDatum (OutputDatum), singleton, Value, Datum (getDatum), MintingPolicy, mkMintingPolicyScript, ToData (toBuiltinData))
+import Plutus.V1.Ledger.Value     (flattenValue)
+import PlutusTx                   (unstableMakeIsData, compile, CompiledCode, applyCode, makeLift, liftCode)
+import PlutusTx.Prelude           (traceIfFalse, find, Integer, (==), map, Ord ((<=), (<), (>=)), (+), (&&),
+                                   MultiplicativeSemigroup ((*)), isJust, appendByteString, consByteString, otherwise, divMod, (++), foldr, appendString, (.), encodeUtf8, toBuiltin)
+import Prelude                    (Bool (False), Maybe (Just, Nothing), IO, ($), Show, Char)
+import Utilities                  (wrapPolicy, writeCodeToFile, writePolicyToFile)
+import PlutusTx.Builtins.Internal (BuiltinString (BuiltinString))
+import Data.Text (pack)
+import PlutusTx.Builtins (equalsInteger)
+import PlutusTx.Builtins.Class (stringToBuiltinString)
 
 data ContractInfo = ContractInfo {
     threadToken :: CurrencySymbol,
     maxSupply :: Integer,
     tokenPrefix :: BuiltinByteString
-}
+} deriving Show
 unstableMakeIsData ''ContractInfo
+makeLift ''ContractInfo
 
 data ThreadDatum = ThreadDatum {
     mintCount :: Integer,
     threadIdx :: Integer,
     threadCount :: Integer
-}
+} deriving Show
 unstableMakeIsData ''ThreadDatum
 
 {-# INLINABLE policy #-}
-policy :: ContractInfo -> () -> ScriptContext -> Bool
-policy info _ ctx = traceIfFalse "Doesn't consume a threadtoken"             consumesThread &&
-                    traceIfFalse "Returned thread either missing or invalid" returnsThread  &&
-                    traceIfFalse "Max supply reached"                        belowSupply    &&
-                    traceIfFalse "Token ID not correct"                      idCorrect
+policy :: ContractInfo -> ThreadDatum -> ScriptContext -> Bool
+policy info td ctx = traceIfFalse "Doesn't consume a threadtoken"             consumesThread &&
+                     traceIfFalse "Returned thread either missing or invalid" returnsThread  &&
+                     traceIfFalse "Max supply reached"                        belowSupply    &&
+                     traceIfFalse "TokenName not correct"                     idCorrect
 
-        where 
+        where
             txInfo :: TxInfo
             txInfo = scriptContextTxInfo ctx
             
             threadValue :: Value
-            threadValue = singleton (threadToken info) (TokenName "Thread") 1
+            threadValue = singleton (threadToken info) (TokenName "thread") 1
 
             consumedThreadDatum :: Maybe ThreadDatum
             consumedThreadDatum = case find (\x -> txOutValue x == threadValue) (map txInInfoResolved $ txInfoInputs txInfo) of 
@@ -65,10 +70,8 @@ policy info _ ctx = traceIfFalse "Doesn't consume a threadtoken"             con
             
             returnsThread :: Bool
             returnsThread = case returnedThreadDatum of
-              Just rd -> case consumedThreadDatum of
-                    Just cd -> mintCount rd == mintCount cd + 1
-                    _       ->  False
-              Nothing -> False
+              Just rd ->  mintCount rd == mintCount td + 1
+              _       -> False
 
             belowSupply :: Bool
             belowSupply = case returnedThreadDatum of
@@ -82,8 +85,8 @@ policy info _ ctx = traceIfFalse "Doesn't consume a threadtoken"             con
 
             idCorrect :: Bool
             idCorrect = case flattenValue $ txInfoMint txInfo of
-                [(_, tn, _)] -> unTokenName tn == appendByteString (tokenPrefix info) (consByteString (48 + threadedId) "") && 
-                                threadedId < 10 &&
+                [(_, tn, _)] -> unTokenName tn == appendByteString (tokenPrefix info) (intToBuiltinByteString threadedId) && 
+                                threadedId < maxSupply info &&
                                 threadedId >= 0
                 _            -> False
 
@@ -95,5 +98,51 @@ wrappedPolicy p = wrapPolicy (policy $ unsafeFromBuiltinData p)
 compiledPolicyCode :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> ())
 compiledPolicyCode = $$(compile [|| wrappedPolicy ||])
 
-saveCode :: IO ()
-saveCode = writeCodeToFile "./assets/zingnft.plutus" compiledPolicyCode
+writeToFile :: IO ()
+writeToFile = writeCodeToFile "./assets/zingnft.plutus" compiledPolicyCode
+
+-- For testing
+compiledPolicy :: ContractInfo -> MintingPolicy
+compiledPolicy i = mkMintingPolicyScript ($$(compile [|| wrappedPolicy ||]) `applyCode` liftCode (toBuiltinData i))
+
+writeTestPolicyToFile :: ContractInfo -> IO ()
+writeTestPolicyToFile i = writePolicyToFile "./assets/zingnft.plutus" (compiledPolicy i)
+
+-- helpers 
+
+-- test :: BuiltinString
+-- test = BuiltinString $ pack "test"
+
+{-# INLINEABLE intToBuiltinByteString #-}
+intToBuiltinByteString :: Integer -> BuiltinByteString
+intToBuiltinByteString i = encodeUtf8 $ intToString i
+
+{-# INLINEABLE intToString #-}
+intToString :: Integer -> BuiltinString
+intToString i = foldr appendString "" strings
+  where
+    ints = intToInts i
+    strings = map intToChar ints
+
+{-# INLINEABLE intToInts #-}
+intToInts :: Integer -> [Integer]
+intToInts i
+  | equalsInteger a 0 = [b]
+  | otherwise = intToInts a ++ [b]
+  where
+    (a, b) = divMod i 10
+
+{-# INLINEABLE intToChar #-}
+intToChar :: Integer -> BuiltinString
+intToChar i
+  | equalsInteger i 0 = "0"
+  | equalsInteger i 1 = "1"
+  | equalsInteger i 2 = "2"
+  | equalsInteger i 3 = "3"
+  | equalsInteger i 4 = "4"
+  | equalsInteger i 5 = "5"
+  | equalsInteger i 6 = "6"
+  | equalsInteger i 7 = "7"
+  | equalsInteger i 8 = "8"
+  | equalsInteger i 9 = "9"
+  | otherwise = "0"

@@ -26,7 +26,7 @@ policy ref _ ctx = traceIfFalse "Expected output was not consumed" consumesInput
         
         correctName :: Bool
         correctName = case flattenValue $ txInfoMint txInfo of
-            [(_,tn,_)] -> tn == "thread"
+            [(_, tn, _)] -> tn == "thread"
             _          -> False
 
 
