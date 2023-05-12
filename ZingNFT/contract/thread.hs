@@ -4,15 +4,17 @@
 
 module ZingNFT_Thread where
 
-import Plutus.V2.Ledger.Api (ScriptContext (scriptContextTxInfo), TxOutRef, TxInfo, txInInfoOutRef, txInfoInputs, BuiltinData, UnsafeFromData (unsafeFromBuiltinData))
-import PlutusTx.Prelude     (traceIfFalse, find, map)
-import Prelude              (Bool (True, False), Maybe (Nothing, Just), Eq ((==)), ($), IO)
-import Utilities            (wrapPolicy, writeCodeToFile)
-import PlutusTx             (compile, CompiledCode)
+import Plutus.V2.Ledger.Api   (ScriptContext (scriptContextTxInfo), TxOutRef, TxInfo (txInfoMint), txInInfoOutRef, txInfoInputs, BuiltinData, UnsafeFromData (unsafeFromBuiltinData))
+import PlutusTx.Prelude       (traceIfFalse, find, map, (&&))
+import Prelude                (Bool (True, False), Maybe (Nothing, Just), Eq ((==)), ($), IO)
+import Utilities              (wrapPolicy, writeCodeToFile)
+import PlutusTx               (compile, CompiledCode)
+import Plutus.V1.Ledger.Value (flattenValue)
 
 {-# INLINABLE policy #-}
 policy :: TxOutRef -> () -> ScriptContext -> Bool
-policy ref _ ctx = traceIfFalse "Expected output was not consumed" consumesInput
+policy ref _ ctx = traceIfFalse "Expected output was not consumed" consumesInput &&
+                   traceIfFalse "TokenName incorrect"              correctName
     where
         txInfo :: TxInfo
         txInfo = scriptContextTxInfo ctx
@@ -21,6 +23,12 @@ policy ref _ ctx = traceIfFalse "Expected output was not consumed" consumesInput
         consumesInput = case find (== ref) (map txInInfoOutRef (txInfoInputs txInfo)) of
             Just _   -> True
             Nothing  -> False
+        
+        correctName :: Bool
+        correctName = case flattenValue $ txInfoMint txInfo of
+            [(_,tn,_)] -> tn == "thread"
+            _          -> False
+
 
 {-# INLINABLE wrappedPolicy #-}
 wrappedPolicy :: BuiltinData -> BuiltinData -> BuiltinData -> ()
