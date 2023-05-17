@@ -32,9 +32,9 @@ library
     hs-source-dirs:   contract
     exposed-modules:  ZingNFT
 
--- test-suite zingnft
---     import:             common-all
---     type:               exitcode-stdio-1.0
---     main-is:            zingnft_test.hs
---     hs-source-dirs:     test
---     build-depends:      zingnft
+test-suite zingnft
+    import:             common-all
+    type:               exitcode-stdio-1.0
+    main-is:            zingnft_test.hs
+    hs-source-dirs:     test
+    build-depends:      zingnft

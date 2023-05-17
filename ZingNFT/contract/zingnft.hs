@@ -7,20 +7,17 @@
 module ZingNFT where
 
 import Plutus.V2.Ledger.Api       (ScriptContext (scriptContextTxInfo), CurrencySymbol, BuiltinByteString, BuiltinData,
-                                  TxInfo (txInfoInputs, txInfoData, txInfoOutputs, txInfoMint),
-                                  UnsafeFromData (unsafeFromBuiltinData), TxInInfo (txInInfoOutRef, txInInfoResolved),
+                                  TxInfo (txInfoInputs, txInfoOutputs, txInfoMint),
+                                  UnsafeFromData (unsafeFromBuiltinData), TxInInfo (txInInfoResolved),
                                   TxOut (txOutValue, txOutDatum), TokenName (TokenName, unTokenName),
                                   OutputDatum (OutputDatum), singleton, Value, Datum (getDatum), MintingPolicy, mkMintingPolicyScript, ToData (toBuiltinData))
 import Plutus.V1.Ledger.Value     (flattenValue)
 import PlutusTx                   (unstableMakeIsData, compile, CompiledCode, applyCode, makeLift, liftCode)
 import PlutusTx.Prelude           (traceIfFalse, find, Integer, (==), map, Ord ((<=), (<), (>=)), (+), (&&),
-                                   MultiplicativeSemigroup ((*)), isJust, appendByteString, consByteString, otherwise, divMod, (++), foldr, appendString, (.), encodeUtf8, toBuiltin)
-import Prelude                    (Bool (False), Maybe (Just, Nothing), IO, ($), Show, Char)
+                                   MultiplicativeSemigroup ((*)), isJust, appendByteString, otherwise, divMod, (++), foldr, appendString, encodeUtf8, BuiltinString)
+import Prelude                    (Bool (False), Maybe (Just, Nothing), IO, ($), Show)
 import Utilities                  (wrapPolicy, writeCodeToFile, writePolicyToFile)
-import PlutusTx.Builtins.Internal (BuiltinString (BuiltinString))
-import Data.Text (pack)
-import PlutusTx.Builtins (equalsInteger)
-import PlutusTx.Builtins.Class (stringToBuiltinString)
+import PlutusTx.Builtins          (equalsInteger)
 
 data ContractInfo = ContractInfo {
     threadToken :: CurrencySymbol,
@@ -108,10 +105,9 @@ compiledPolicy i = mkMintingPolicyScript ($$(compile [|| wrappedPolicy ||]) `app
 writeTestPolicyToFile :: ContractInfo -> IO ()
 writeTestPolicyToFile i = writePolicyToFile "./assets/zingnft.plutus" (compiledPolicy i)
 
--- helpers 
-
--- test :: BuiltinString
--- test = BuiltinString $ pack "test"
+--------------------------------------------------
+-- helper
+--------------------------------------------------
 
 {-# INLINEABLE intToBuiltinByteString #-}
 intToBuiltinByteString :: Integer -> BuiltinByteString
@@ -145,4 +141,4 @@ intToChar i
   | equalsInteger i 7 = "7"
   | equalsInteger i 8 = "8"
   | equalsInteger i 9 = "9"
-  | otherwise = "0"
+  | otherwise = "0" -- not possible
