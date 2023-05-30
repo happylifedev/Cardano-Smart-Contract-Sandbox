@@ -35,11 +35,11 @@ data ThreadDatum = ThreadDatum {
 unstableMakeIsData ''ThreadDatum
 
 {-# INLINABLE policy #-}
-policy :: ContractInfo -> ThreadDatum -> ScriptContext -> Bool
-policy info td ctx = traceIfFalse "Doesn't consume a threadtoken"             consumesThread &&
-                     traceIfFalse "Returned thread either missing or invalid" returnsThread  &&
-                     traceIfFalse "Max supply reached"                        belowSupply    &&
-                     traceIfFalse "TokenName not correct"                     idCorrect
+policy :: ContractInfo -> () -> ScriptContext -> Bool
+policy info _ ctx = traceIfFalse "Doesn't consume a threadtoken"             consumesThread &&
+                    traceIfFalse "Returned thread either missing or invalid" returnsThread  &&
+                    traceIfFalse "Max supply reached"                        belowSupply    &&
+                    traceIfFalse "TokenName not correct"                     idCorrect
 
         where
             txInfo :: TxInfo
@@ -67,7 +67,9 @@ policy info td ctx = traceIfFalse "Doesn't consume a threadtoken"             co
             
             returnsThread :: Bool
             returnsThread = case returnedThreadDatum of
-              Just rd ->  mintCount rd == mintCount td + 1
+              Just rd ->  case consumedThreadDatum of 
+                Just td -> mintCount rd == mintCount td + 1
+                _       -> False
               _       -> False
 
             belowSupply :: Bool
@@ -141,4 +143,4 @@ intToChar i
   | equalsInteger i 7 = "7"
   | equalsInteger i 8 = "8"
   | equalsInteger i 9 = "9"
-  | otherwise = "0" -- not possible
+  | otherwise = "0" -- fix this

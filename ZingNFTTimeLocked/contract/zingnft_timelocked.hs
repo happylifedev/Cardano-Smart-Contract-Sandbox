@@ -58,6 +58,8 @@ policy p _ ctx = traceIfFalse "Unauthorized to mint" ownerApproved &&
                         prefixLength = lengthOfByteString $ tokenPrefix p
                 _            -> False
 
+
+
 {-# INLINABLE wrappedPolicy #-}
 wrappedPolicy :: Constants -> BuiltinData -> BuiltinData -> ()
 wrappedPolicy = wrapPolicy . policy

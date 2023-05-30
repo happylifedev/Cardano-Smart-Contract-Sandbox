@@ -31,6 +31,7 @@ library
     import:           common-all
     hs-source-dirs:   contract
     exposed-modules:  ZingNFT
+                    , Thread
 
 test-suite zingnft
     import:             common-all

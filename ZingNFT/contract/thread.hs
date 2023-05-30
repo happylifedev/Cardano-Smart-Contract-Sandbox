@@ -2,13 +2,13 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE DataKinds #-}
 
-module ZingNFT_Thread where
+module Thread where
 
-import Plutus.V2.Ledger.Api   (ScriptContext (scriptContextTxInfo), TxOutRef, TxInfo (txInfoMint), txInInfoOutRef, txInfoInputs, BuiltinData, UnsafeFromData (unsafeFromBuiltinData))
+import Plutus.V2.Ledger.Api   (ScriptContext (scriptContextTxInfo), TxOutRef, TxInfo (txInfoMint), txInInfoOutRef, txInfoInputs, BuiltinData, UnsafeFromData (unsafeFromBuiltinData), mkMintingPolicyScript, ToData (toBuiltinData), MintingPolicy)
 import PlutusTx.Prelude       (traceIfFalse, find, map, (&&))
 import Prelude                (Bool (True, False), Maybe (Nothing, Just), Eq ((==)), ($), IO)
 import Utilities              (wrapPolicy, writeCodeToFile)
-import PlutusTx               (compile, CompiledCode)
+import PlutusTx               (compile, CompiledCode, applyCode, liftCode)
 import Plutus.V1.Ledger.Value (flattenValue)
 
 {-# INLINABLE policy #-}
@@ -36,6 +36,9 @@ wrappedPolicy p = wrapPolicy (policy $ unsafeFromBuiltinData p)
 
 compiledPolicyCode :: CompiledCode(BuiltinData -> BuiltinData -> BuiltinData -> ())
 compiledPolicyCode = $$(compile [|| wrappedPolicy ||])
+
+compiledPolicy :: TxOutRef -> MintingPolicy 
+compiledPolicy out = mkMintingPolicyScript ($$(compile [|| wrappedPolicy ||]) `applyCode` liftCode (toBuiltinData out)) 
 
 writeToFile :: IO ()
 writeToFile = writeCodeToFile "./assets/zingnft_thread.plutus" compiledPolicyCode
