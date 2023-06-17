@@ -66,10 +66,8 @@ policy info _ ctx = traceIfFalse "Doesn't consume a threadtoken"             con
             consumesThread = isJust consumedThreadDatum
             
             returnsThread :: Bool
-            returnsThread = case returnedThreadDatum of
-              Just rd ->  case consumedThreadDatum of 
-                Just td -> mintCount rd == mintCount td + 1
-                _       -> False
+            returnsThread = case (returnedThreadDatum, consumedThreadDatum) of
+              (Just rd, Just td) -> mintCount rd == mintCount td + 1
               _       -> False
 
             belowSupply :: Bool

@@ -1,7 +1,14 @@
 ## ZingNFT
 A threaded and parameterised minting policy to mint custom NFTs
 
-### Approach:
+#### Revised approach notes:  
+After revisiting my approach, I'm not sure it is possible to achieve this way. I realized that I was assuming I could send a token to a Minting policy and have it act like a spending validator. This is not the case, and instead the thread token would just sit at that address(some address?) but there would not be anything governing it's spending. 
+
+I will need to create a spending validator that can own and govern the spending of the thread token. The current minting policy will need to adapt to cater for this change. 
+
+---
+
+### 2023-04-27 approach:
 
 - Mint x thread tokens  
     - inline datum
