@@ -12,11 +12,12 @@ import Plutus.V2.Ledger.Api       (ScriptContext (scriptContextTxInfo), OutputDa
                                   TxInfo (txInfoOutputs, txInfoMint), TokenName (TokenName), singleton, txInfoOutputs, 
                                   BuiltinData)
 import PlutusTx.Prelude           (traceIfFalse, find, BuiltinString, encodeUtf8, appendString, appendByteString, (==),
-                                  (+), (<), map)
-import PlutusTx.Builtins          (equalsInteger)
+                                  (+), (<), map, (&&), (+), Ord((<)), Integer, map, foldr, (++), divMod, otherwise)
 import PlutusTx                   (unstableMakeIsData, CompiledCode, compile)
+import PlutusTx.Builtins          (equalsInteger)
 import Plutus.V1.Ledger.Value     (valueOf)
 import Utilities                  (wrapValidator, writeCodeToFile)
+import Prelude                    (Show, Maybe (Just, Nothing), Bool (False), IO, ($))
 
 data ThreadDatum = ThreadDatum {
     mintCount :: Integer,
@@ -116,4 +117,4 @@ intToChar i
   | equalsInteger i 7 = "7"
   | equalsInteger i 8 = "8"
   | equalsInteger i 9 = "9"
-  | otherwise = "0" -- fix this
+  | otherwise = "0" -- fix this; unsafe if passed a 2 digit number, wouldn't happen in this implementation
