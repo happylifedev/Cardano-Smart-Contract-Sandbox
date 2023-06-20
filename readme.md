@@ -18,9 +18,9 @@ Zingcoin except with the script constants applied to the compiled code, by Lucid
 A time locking parameterized minting policy to allow minting of custom NFT's
 
 ### ZingNFT
-WIP - Minting policy that is not timelocked but instead governed by a thread token
-High level approach:    
-3 scripts required:
+WIP - Minting policy that is not timelocked but instead governed by a thread token  
+#### High level approach:  
+3 scripts required:  
 1. thread policy
     - parameterized by a utxo, immutable
     - mints thread token
